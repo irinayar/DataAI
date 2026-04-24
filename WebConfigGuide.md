@@ -1,32 +1,32 @@
 # DataAI web.config Configuration Guide
 
-This guide walks you through configuring the `web.config` file for your DataAI installation. The file is located in the root of your DataAI web application directory.
+This guide explains how to configure the `web.config` file for your DataAI installation. Every setting you need to change is marked with `[placeholder text]` in the default file.
 
-## Before You Begin
-
-Make a backup copy of `web.config` before making any changes:
+**Before you start**, make a backup:
 
 ```
 copy web.config web.config.backup
 ```
 
-Open the file in any text editor (Notepad, VS Code, Notepad++). All values you need to change are shown as `[placeholder text]` in the default file.
-
 ---
 
-## Step 1: Database Connection Strings
+## Step 1: Connection Strings
 
-The `<connectionStrings>` section defines three connections. Uncomment the block that matches your database engine and fill in your server details.
+The `<connectionStrings>` section is where you tell DataAI how to reach your database. The file ships with all database templates commented out inside `<!-- ... -->`. You need to uncomment exactly one block that matches your database engine.
 
-**MySqlConnection** — DataAI's operational database (stores reports, users, settings).
-**UserSqlConnection** — Your data database (the data you want to analyze).
-**CSVconnection** — Used for CSV file import operations (usually points to the same database as UserSqlConnection).
+**Do not change the order of the three connection names.** They must always appear in this order:
 
-### MySQL (recommended)
+1. **MySqlConnection** — DataAI operational database (stores reports, users, configuration)
+2. **UserSqlConnection** — your data database (the data you want to analyze)
+3. **CSVconnection** — used for CSV import (typically same as UserSqlConnection)
+
+Pick your database engine below, uncomment its three lines, and replace the placeholders.
+
+### MySQL
 
 ```xml
 <add name="MySqlConnection"
-     connectionString="Server=YOUR_SERVER; Database=YOUR_DB_NAME; User ID=YOUR_USER; Password=YOUR_PASSWORD;"
+     connectionString="Server=YOUR_SERVER; Database=YOUR_OPERATIONAL_DB; User ID=YOUR_USER; Password=YOUR_PASSWORD;"
      providerName="MySql.Data.MySqlClient" />
 <add name="UserSqlConnection"
      connectionString="Server=YOUR_DATA_SERVER; Database=YOUR_DATA_DB; User ID=YOUR_USER; Password=YOUR_PASSWORD;"
@@ -40,7 +40,7 @@ The `<connectionStrings>` section defines three connections. Uncomment the block
 
 ```xml
 <add name="MySqlConnection"
-     connectionString="Server=YOUR_SERVER; Database=YOUR_DB_NAME; User ID=YOUR_USER; Password=YOUR_PASSWORD; Trusted_Connection=True"
+     connectionString="Server=YOUR_SERVER; Database=YOUR_OPERATIONAL_DB; User ID=YOUR_USER; Password=YOUR_PASSWORD; Trusted_Connection=True"
      providerName="System.Data.SqlClient" />
 <add name="UserSqlConnection"
      connectionString="Server=YOUR_DATA_SERVER; Database=YOUR_DATA_DB; User ID=YOUR_USER; Password=YOUR_PASSWORD; Trusted_Connection=True"
@@ -52,9 +52,11 @@ The `<connectionStrings>` section defines three connections. Uncomment the block
 
 ### PostgreSQL
 
+Default port is 5432.
+
 ```xml
 <add name="MySqlConnection"
-     connectionString="Server=YOUR_SERVER; Port=5432; Database=YOUR_DB_NAME; User ID=YOUR_USER; Password=YOUR_PASSWORD;"
+     connectionString="Server=YOUR_SERVER; Port=5432; Database=YOUR_OPERATIONAL_DB; User ID=YOUR_USER; Password=YOUR_PASSWORD;"
      providerName="Npgsql" />
 <add name="UserSqlConnection"
      connectionString="Server=YOUR_DATA_SERVER; Port=5432; Database=YOUR_DATA_DB; User ID=YOUR_USER; Password=YOUR_PASSWORD;"
@@ -65,6 +67,8 @@ The `<connectionStrings>` section defines three connections. Uncomment the block
 ```
 
 ### Oracle
+
+Oracle also requires a fourth `SystemSqlConnection` line.
 
 ```xml
 <add name="SystemSqlConnection"
@@ -81,7 +85,11 @@ The `<connectionStrings>` section defines three connections. Uncomment the block
      providerName="Oracle.ManagedData.Client" />
 ```
 
+**License required:** Oracle Database requires a valid commercial license from Oracle Corporation. DataAI does not provide or distribute Oracle software. Visit https://www.oracle.com for licensing information.
+
 ### InterSystems IRIS
+
+Default port is 1972 or 51773. IRIS also requires a `SystemSqlConnection` line.
 
 ```xml
 <add name="SystemSqlConnection"
@@ -98,76 +106,56 @@ The `<connectionStrings>` section defines three connections. Uncomment the block
      providerName="InterSystems.Data.IRISClient" />
 ```
 
+**License required:** InterSystems IRIS requires a valid commercial license from InterSystems Corporation. DataAI does not provide or distribute InterSystems software. Visit https://www.intersystems.com for licensing information.
+
 ### InterSystems Caché
 
-Use the same format as IRIS above, but change the provider to `InterSystems.Data.CacheClient`.
+Same format as IRIS, but use `providerName="InterSystems.Data.CacheClient"` on each line. Default port is 1972.
 
-### SQLite (default / standalone)
+**License required:** InterSystems Caché requires a valid commercial license from InterSystems Corporation.
 
-The default configuration ships with SQLite for zero-setup local use:
+---
+
+## Step 2: Application Identity and URLs
+
+In the `<appSettings>` section, update these values:
 
 ```xml
-<add name="MySqlConnection" connectionString="Sqlite" providerName="Sqlite" />
-<add name="UserSqlConnection" connectionString="Sqlite" providerName="Sqlite" />
-<add name="CSVconnection" connectionString="Sqlite" providerName="Sqlite" />
+<add key="pagettl" value="DataAI - Data Analytical Intelligence" />
 ```
 
-**Important:** When switching from SQLite to another database, remove or comment out the SQLite lines and uncomment your chosen database block. Only one set of connection strings should be active at a time.
+Set `pagettl` to the title you want displayed in the browser tab.
+
+```xml
+<add key="webour" value="https://yourserver/DataAI/" />
+<add key="weboureports" value="https://yourserver/DataAI/" />
+<add key="webhelpdesk" value="https://yourserver/DataAI/" />
+```
+
+Set all three to the full URL where your DataAI site is hosted.
+
+```xml
+<add key="OUReportsServer" value="your-db-server-hostname" />
+```
+
+Set this to the hostname or IP of your operational database server.
 
 ---
 
-## Step 2: Application Settings
+## Step 3: Email (SMTP)
 
-In the `<appSettings>` section, update the following keys.
+DataAI sends email for user registration and support tickets. You need to configure it in two places.
 
-### Application Identity
+**In `<appSettings>`:**
 
-| Key | What to Enter | Example |
-|-----|---------------|---------|
-| `ourapplication` | Your application display name | `DataAILite` |
-| `pagettl` | Browser tab / page title | `DataAILite in memory` |
-| `unit` | Your organization or unit name | `MyCompany` |
-| `unitenddate` | License expiration date | `2040-12-31 23:59:00` |
+```xml
+<add key="SmtpCred" value="smtp.gmail.com" />
+<add key="smtpemail" value="noreply@yourcompany.com" />
+<add key="smtpemailpass" value="your-app-password" />
+<add key="supportemail" value="support@yourcompany.com" />
+```
 
-### Web URLs
-
-| Key | What to Enter | Example |
-|-----|---------------|---------|
-| `unitOUReportsWeb` | Full URL to your DataAI site | `https://myserver/DataAILite/` |
-| `unitRegistrationWeb` | Registration page URL | `https://myserver/DataAILite/` |
-| `webour` | Your DataAI web URL | `https://myserver/DataAILite/` |
-| `weboureports` | Reports web URL | `https://myserver/DataAILite/` |
-| `webhelpdesk` | Help desk URL | `https://myserver/DataAILite/` |
-
-### Database Reference
-
-| Key | What to Enter | Example |
-|-----|---------------|---------|
-| `unitOURdbConnStr` | Connection string for operational DB | `Server=localhost; Database=DataAI; User ID=root; Password=secret;` |
-| `OUReportsServer` | Operational database server hostname | `localhost` |
-
-### Super User Password
-
-| Key | What to Enter |
-|-----|---------------|
-| `superpass` | Password for the built-in super administrator account |
-
----
-
-## Step 3: Email (SMTP) Settings
-
-DataAI sends emails for user registration, password resets, and support tickets. Configure both locations:
-
-### In `<appSettings>`:
-
-| Key | What to Enter | Example |
-|-----|---------------|---------|
-| `SmtpCred` | SMTP server hostname | `smtp.gmail.com` |
-| `smtpemail` | SMTP sender email address | `noreply@yourcompany.com` |
-| `smtpemailpass` | SMTP email password or app password | `your-app-password` |
-| `supportemail` | Email address for support tickets | `support@yourcompany.com` |
-
-### In `<system.net>` / `<mailSettings>`:
+**In `<system.net>` / `<mailSettings>`:**
 
 ```xml
 <smtp deliveryMethod="Network" from="noreply@yourcompany.com">
@@ -180,109 +168,141 @@ DataAI sends emails for user registration, password resets, and support tickets.
 </smtp>
 ```
 
-**Gmail users:** You must use an [App Password](https://support.google.com/accounts/answer/185833), not your regular Gmail password. Enable 2-Step Verification first, then generate an App Password.
+Make sure both locations use the same email address and password.
+
+**Gmail users:** You must generate an App Password at https://myaccount.google.com/apppasswords (requires 2-Step Verification enabled). Your regular Gmail password will not work.
 
 ---
 
-## Step 4: Google Maps API Key (Optional)
-
-Required only if your reports use geographic map visualizations.
-
-| Key | What to Enter |
-|-----|---------------|
-| `mapkey` | Your Google Maps JavaScript API key |
-
-Get a key at: https://console.cloud.google.com/google/maps-api
-
-If you are not using map reports, you can leave this as `[your google map key]` or set it to an empty string.
-
----
-
-## Step 5: OpenAI Integration (Optional)
-
-Required only if you want AI-powered data analysis and the ChatAI feature.
-
-| Key | What to Enter | Example |
-|-----|---------------|---------|
-| `openaikey` | Your OpenAI API key | `sk-proj-abc123...` |
-| `openaiorganization` | Your OpenAI organization ID | `org-abc123` |
-| `apiURL` | OpenAI API endpoint URL | `https://api.openai.com/v1/chat/completions` |
-| `openaimodel` | Model name | `gpt-4o` or `gpt-4o-mini` or `o3` or `o3-mini` |
-| `openaimaxTokens` | Maximum token limit for responses | `128000` |
-
-Get your API key at: https://platform.openai.com/api-keys
-
-If you are not using AI features, leave these fields as their placeholder values.
-
----
-
-## Step 6: File Upload Folder
-
-| Key | What to Enter | Example |
-|-----|---------------|---------|
-| `fileupload` | Server folder path for uploaded CSV/data files | `C:\DataAI\uploads\` |
-
-Make sure the IIS application pool identity has read/write permissions on this folder.
-
----
-
-## Step 7: Database Case Sensitivity
-
-These settings control how DataAI handles table and column name casing in SQL queries. Set them to match your database server's behavior.
-
-| Key | Options | When to Use |
-|-----|---------|-------------|
-| `ourdbcase` | `lower`, `upper`, `mix`, `doublequoted`, or empty | Operational database |
-| `csvdbcase` | `lower`, `upper`, `mix`, `doublequoted`, or empty | CSV import database |
-| `userdbcase` | `lower`, `upper`, `mix`, `doublequoted`, or empty | User data database |
-
-Typical values: MySQL uses `lower`, Oracle uses `upper`, PostgreSQL uses `lower`, SQL Server uses `mix`.
-
----
-
-## Step 8: Database Provider Flags
-
-If you are using a specific database engine, set its provider key to a non-empty value `OK` and leave the others empty:
+## Step 4: File Upload Folder
 
 ```xml
-<add key="MySqlProv" value="yes" />      <!-- MySQL -->
-<add key="SQLServerProv" value="" />     <!-- SQL Server -->
-<add key="CacheProv" value="" />         <!-- InterSystems Caché -->
-<add key="IRISProv" value="" />          <!-- InterSystems IRIS -->
-<add key="CSVProv" value="" />           <!-- CSV flat files -->
-<add key="Oracle" value="" />            <!-- Oracle -->
-<add key="ODBC" value="" />              <!-- ODBC generic -->
-<add key="OleDb" value="" />             <!-- OLE DB generic -->
-<add key="Npgsql" value="" />            <!-- PostgreSQL -->
+<add key="fileupload" value="C:\DataAI\uploads\" />
 ```
 
-Only enable the provider that matches your `<connectionStrings>` configuration.
+Set this to a folder on the server where DataAI can store uploaded CSV and data files. The IIS application pool identity must have read and write permissions on this folder.
 
 ---
 
-## Other Settings (Usually No Changes Needed)
+## Step 5: Google Maps API Key (optional)
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `maxretries` | `5` | Number of retry attempts for failed API calls |
-| `SiteFor` | `Production` | Environment label (`Production` or `Development`) |
-| `DaysFree` | `2000` | Number of free trial days for new registrations |
-| `version` | `36-00` | DataAI version number (do not change) |
-| `UnitAuthenticate` | `NO` | Whether to enforce unit-level authentication |
-| `dataaidownpay` | `$10` | Download payment amount (if payments are enabled) |
-| `dataaidbpay` | `$100` | Database setup payment amount |
-| `ACEOLEDBversion` | `Provider=Microsoft.ACE.OLEDB.16.0;` | ACE OLE DB version for Excel/Access imports |
+Only needed if your reports use geographic map visualizations.
+
+```xml
+<add key="mapkey" value="AIzaSy..." />
+```
+
+Get a key at https://console.cloud.google.com/google/maps-api. If you are not using maps, leave the placeholder value.
+
+---
+
+## Step 6: OpenAI Integration (optional)
+
+Only needed if you want AI-powered data analysis and the ChatAI feature.
+
+```xml
+<add key="openaikey" value="sk-proj-..." />
+<add key="openaiorganization" value="org-..." />
+<add key="apiURL" value="https://api.openai.com/v1/chat/completions" />
+<add key="openaimodel" value="gpt-4o" />
+<add key="openaimaxTokens" value="128000" />
+```
+
+Available models: `gpt-4o`, `gpt-4o-mini`. Get your API key at https://platform.openai.com/api-keys. The `apiURL` is already set to the correct default and usually does not need to change.
+
+If you are not using AI features, leave the placeholder values.
+
+---
+
+## Step 7: Database Provider Flags
+
+Set the provider flag to `OK` for each database engine your installation can use. Leave the others empty.
+
+```xml
+<add key="MySqlProv" value="OK" />       <!-- MySQL -->
+<add key="SQLServerProv" value="OK" />   <!-- SQL Server -->
+<add key="CacheProv" value="" />         <!-- InterSystems Caché -->
+<add key="IRISProv" value="" />          <!-- InterSystems IRIS -->
+<add key="CSVProv" value="OK" />         <!-- CSV flat file import -->
+<add key="Oracle" value="" />            <!-- Oracle -->
+<add key="Npgsql" value="OK" />          <!-- PostgreSQL -->
+<add key="ODBC" value="" />              <!-- ODBC generic -->
+<add key="OleDb" value="" />             <!-- OLE DB generic -->
+```
+
+The default file ships with MySQL, SQL Server, CSV, and PostgreSQL enabled. Adjust to match the database drivers installed on your server.
+
+---
+
+## Step 8: Database Case Sensitivity
+
+These control how DataAI formats table and column names in SQL queries. Set them to match your database engine.
+
+```xml
+<add key="ourdbcase" value="lower" />   <!-- operational database -->
+<add key="csvdbcase" value="lower" />   <!-- CSV import database -->
+<add key="userdbcase" value="" />       <!-- user data database -->
+```
+
+Recommended values by database engine:
+
+| Database | Recommended Setting |
+|----------|-------------------|
+| MySQL | `lower` |
+| PostgreSQL | `lower` |
+| SQL Server | `mix` |
+| Oracle | `upper` |
+| InterSystems IRIS / Caché | `upper` |
+
+---
+
+## Settings You Usually Don't Need to Change
+
+| Key | Default | What It Does |
+|-----|---------|--------------|
+| `webinstall` | `OURweb` | Internal install marker |
+| `dbinstall` | `OURdb` | Internal install marker |
+| `unit` | `OUR` | Unit identifier |
+| `unitenddate` | `2040-12-31 23:59:00` | License expiration |
+| `UnitAuthenticate` | `NO` | Unit-level authentication toggle |
+| `maxretries` | `5` | API call retry attempts |
+| `SiteFor` | `Production` | Environment label |
+| `DaysFree` | `2000` | Free trial days for new users |
+| `version` | `34-00` | DataAI version (do not change) |
+| `dataaidownpay` | `$10` | Download fee (if payments enabled) |
+| `dataaidbpay` | `$100` | Database setup fee |
+| `ACEOLEDBversion` | `Provider=Microsoft.ACE.OLEDB.16.0;` | ACE driver for Excel/Access imports |
+
+---
+
+## Quick Checklist
+
+After editing, verify you have completed each step:
+
+- [ ] Uncommented exactly one database block in `<connectionStrings>` with your credentials filled in
+- [ ] Set `pagettl` to your site title
+- [ ] Set `webour`, `weboureports`, `webhelpdesk` to your site URL
+- [ ] Set `OUReportsServer` to your database server hostname
+- [ ] Configured SMTP email in both `<appSettings>` and `<system.net>`
+- [ ] Set `fileupload` to a writable folder path
+- [ ] Set `mapkey` (if using map reports)
+- [ ] Set `openaikey` and `openaimodel` (if using AI features)
+- [ ] Enabled the correct database provider flags
+- [ ] Set `ourdbcase`, `csvdbcase`, `userdbcase` for your database engine
+- [ ] Saved the file and restarted the IIS application pool
 
 ---
 
 ## Troubleshooting
 
-**"Could not load file or assembly 'MySql.Data'"** — Make sure `MySql.Data.dll` (version 8.0.30) is in the `Bin` folder of your DataAI web application.
+**"Could not load file or assembly 'MySql.Data'"** — Place `MySql.Data.dll` (version 8.0.30) in your DataAI `Bin` folder.
 
-**Connection timeout errors** — Increase `executionTimeout` in the `<httpRuntime>` tag (default is 36000 seconds).
+**Connection timeout errors** — Increase `executionTimeout` in `<httpRuntime>` (default is 36000 seconds = 10 hours).
 
-**Large file upload failures** — Increase `maxRequestLength` in the `<httpRuntime>` tag (default is 8192 KB = 8 MB). Value is in kilobytes.
+**Large file uploads failing** — Increase `maxRequestLength` in `<httpRuntime>` (default is 8192 KB = 8 MB, maximum is 2147483647).
 
-**Email sending failures** — Verify your SMTP credentials. For Gmail, make sure you are using an App Password and that 2-Step Verification is enabled on the Google account.
+**Emails not sending** — Verify the email and password match in both `<appSettings>` and `<system.net>`. For Gmail, use an App Password.
 
-**IIS 500 errors** — Set `<compilation debug="true">` to see detailed error messages, and check that `validateIntegratedModeConfiguration` is set to `false` in `<system.webServer>`.
+**IIS 500 errors** — Check that `debug="true"` is set in `<compilation>` to see detailed errors. Verify `validateIntegratedModeConfiguration="false"` is present in `<system.webServer>`.
+
+**Wrong column/table names in queries** — Adjust `ourdbcase`, `csvdbcase`, and `userdbcase` to match your database's case sensitivity rules.
